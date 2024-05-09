@@ -1,125 +1,177 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(HotPotatoGame());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  // This widget is the root of your application.
+class HotPotatoGame extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
-      ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      title: 'Hot Potato Game',
+      home: GameScreen(),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
-
+class GameScreen extends StatefulWidget {
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  _GameScreenState createState() => _GameScreenState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class _GameScreenState extends State<GameScreen> {
+  late Timer _timer;
+  int _timerDuration = 10; // in seconds
+  bool _gameStarted = false;
+  int _currentPlayerIndex = 0;
 
-  void _incrementCounter() {
+  List<String> _players = [
+    'Player 1',
+    'Player 2',
+    'Player 3',
+    'Player 4',
+  ];
+
+  void _startGame() {
     setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
+      _gameStarted = true;
+      _timer = Timer.periodic(Duration(seconds: 1), (timer) {
+        setState(() {
+          if (_timerDuration > 0) {
+            _timerDuration--;
+          } else {
+            _endGame();
+          }
+        });
+      });
     });
+  }
+
+  void _passPotato() {
+    // Logic for passing potato to the next player
+    // For simplicity, just increment player index
+    _currentPlayerIndex = (_currentPlayerIndex + 1) % _players.length;
+     // Reset the timer when passing the potato
+  }
+
+  void _endGame() {
+    _timer.cancel();
+    // Determine the losing player and display a message
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Game Over'),
+          content: Text('${_players[_currentPlayerIndex]} lost!'),
+          actions: [
+            TextButton(
+              child: Text('OK'),
+              onPressed: () {
+                Navigator.of(context).pop();
+                setState(() {
+                  _gameStarted = false;
+                  _timerDuration = 10;
+                  _currentPlayerIndex = 0;
+                });
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildPlayerCircle(String playerName, Color color, bool isActivePlayer) {
+    return Container(
+      width: 80,
+      height: 80,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: isActivePlayer ? color : Colors.grey,
+      ),
+      child: Center(
+        child: Text(
+          playerName,
+          textAlign: TextAlign.center,
+          style: TextStyle(color: Colors.white),
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return Scaffold(
       appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
+        title: Text('Hot Potato Game'),
       ),
       body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
         child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
+            Expanded(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: _players
+                    .sublist(0, _players.length ~/ 2)
+                    .map((player) => _buildPlayerCircle(
+                        player,
+                        player == 'Player 1'
+                        ? Colors.blue
+                        : player == 'Player 2'
+                        ? Colors.red
+                        : player == 'Player 3'
+                        ? Colors.green
+                        : Colors.yellow,
+                        _currentPlayerIndex == _players.indexOf(player)))
+                    .toList(),
+              ),
             ),
+            SizedBox(height: 20),
             Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
+              _gameStarted ? 'Time left: $_timerDuration' : 'Press Start to begin',
             ),
+            SizedBox(height: 20),
+            Expanded(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: _players
+                    .sublist(_players.length ~/ 2)
+                    .map((player) => _buildPlayerCircle(
+                        player,
+                        player == 'Player 1'
+                            ? Colors.blue
+                            : player == 'Player 2'
+                                ? Colors.red
+                                : player == 'Player 3'
+                                    ? Colors.green
+                                    : Colors.yellow,
+                        _currentPlayerIndex == _players.indexOf(player)))
+                    .toList(),
+              ),
+            ),
+            SizedBox(height: 20),
+            if (!_gameStarted)
+              TextButton(
+                onPressed: _startGame,
+                child: Text('Start'),
+              )
+            else
+              TextButton(
+                onPressed: _passPotato,
+                child: Text('Pass Potato'),
+                style: ButtonStyle(
+                  backgroundColor: MaterialStateProperty.all<Color>(
+                    _currentPlayerIndex == 0 ? Colors.blue :
+                    _currentPlayerIndex == 1 ? Colors.red :
+                    _currentPlayerIndex == 2 ? Colors.green : Colors.yellow,
+                  ),
+                ),
+              ),
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
 }
