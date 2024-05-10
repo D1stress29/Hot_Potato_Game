@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
 
@@ -103,12 +104,18 @@ void startGameOnTap() {
 
 
   void passPotato() {
-    setState(() {
-    currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
-    });
-    // koda za pošiljanje paketa
-    //uporabimo setState, da se igralec posodobi takoj in ne čakamo na naslednji klic build funkcije
-  }
+  setState(() {
+    int newIndex;
+    
+    do {
+      newIndex = Random().nextInt(players.length);
+      //funkcija generira naključno število glede na število igralcev v do stavku
+    } while (newIndex == currentPlayerIndex);
+    //while pogoj se izpolnjuje ko je generiran index enak indexu trenutnega igralca
+    currentPlayerIndex = newIndex;
+    //nastavimo igralcu nov index, ki je drugačen od trenutnega
+  });
+}
 
 Widget _buildPlayerCircle(String playerName, Color color, bool isActivePlayer) {
   return Container(
