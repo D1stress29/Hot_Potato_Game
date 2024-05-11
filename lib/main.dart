@@ -12,6 +12,7 @@ class HotPotatoGame extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Hot Potato Game',
+      
       home: GameScreen(),
     );
   }
@@ -45,10 +46,12 @@ class _GameScreenState extends State<GameScreen> {
       gameStarted = true;
       timer = Timer.periodic(Duration(seconds: 1), (timer) {
         setState(() {
-          if (timerDuration > 0) {
+          if (timerDuration >  0) {
             timerDuration--;
             //nastavljeno odštevanje števca
-          } else {
+          } 
+          else 
+          {
             endGame();
           }
         });
@@ -56,33 +59,84 @@ class _GameScreenState extends State<GameScreen> {
     });
   }
 
+void gameWinner() {
+ //funkcija za izpis zmagovalca
+timer.cancel();
+showDialog(
+      barrierDismissible: false,
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('${players[0]} is the winner!'),
+              //izpiše ime zmagovalca
+              SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  setState(() {
+                    gameStarted = false;
+                    timerDuration = 10;
+                    currentPlayerIndex = 0;
+                    players = ['Player 1', 'Player 2', 'Player 3', 'Player 4'];
+                    //igralce, ki so izgubili doda nazaj v igro
+                  
+                  });
+                },
+                child: Text('Play Again'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+}
+
+
+
   void endGame() {
     // koda za prekinitev igre
     timer.cancel();
     showDialog(
+      barrierDismissible: false,
+      //obvezen klik na OK gumb
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Game Over'),
+          
           content: Text('${players[currentPlayerIndex]} lost!'),
           //izpiše igralca, ki je izgubil življenje
           actions: [
-            TextButton(
+            TextButton
+            (
               child: Text('OK'),
-              onPressed: () {
+              onPressed: () 
+              {
                 Navigator.of(context).pop();
-                setState(() {
+                setState(() 
+                {
+                  players.removeAt(currentPlayerIndex);
+                  //odstrani igralca, če je izgubil življenje
+                  
                   gameStarted = false;
                   timerDuration = 10;
                   currentPlayerIndex = 0;
                   //ponastavi igro
+                  if (players.length == 1) 
+                  {
+                    gameWinner();
+                    //če je igralec zadnji v igri, se uporabi gameWinner funkcija
+                  }
+                  
                 });
               },
             ),
           ],
         );
       },
-    );
+    );  
   }
 
   @override
@@ -107,10 +161,12 @@ void startGameOnTap() {
   setState(() {
     int newIndex;
     
-    do {
+    do 
+    {
       newIndex = Random().nextInt(players.length);
       //funkcija generira naključno število glede na število igralcev v do stavku
-    } while (newIndex == currentPlayerIndex);
+    } 
+    while (newIndex == currentPlayerIndex);
     //while pogoj se izpolnjuje ko je generiran index enak indexu trenutnega igralca
     currentPlayerIndex = newIndex;
     //nastavimo igralcu nov index, ki je drugačen od trenutnega
@@ -122,7 +178,10 @@ Widget _buildPlayerCircle(String playerName, Color color, bool isActivePlayer) {
     width: 100,
     height: 100,
     margin: EdgeInsets.all(50),
-    child: GestureDetector(
+    child: Stack(
+    alignment: Alignment.center,
+    children: [ 
+      GestureDetector(
       //metoda za prepoznavanje dotika
       onTap: () {
         if (gameStarted && isActivePlayer) {
@@ -147,8 +206,19 @@ Widget _buildPlayerCircle(String playerName, Color color, bool isActivePlayer) {
         ),
       ),
     ),
-  );
-} 
+    if (isActivePlayer)
+      Positioned (
+        right: -50,
+              child: Image.asset(
+                'assets/paket.png',
+                width: 50,
+                height: 50,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
 
   
 
@@ -159,8 +229,7 @@ Widget _buildPlayerCircle(String playerName, Color color, bool isActivePlayer) {
     return Scaffold(
       
       body: Center(
-        child: GestureDetector(
-          onTap: startGameOnTap,
+        
           //zažene funkcijo startGameOnTap ob kliku ekrana
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -168,9 +237,8 @@ Widget _buildPlayerCircle(String playerName, Color color, bool isActivePlayer) {
             Expanded(
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: players
-                    .sublist(0, players.length ~/ 2)
-                    .map((player) => _buildPlayerCircle(
+                children: players.sublist(0, players.length ~/ 2).map((player) => _buildPlayerCircle
+                (
                         player,
                         player == 'Player 1'
                         ? Colors.blue
@@ -180,22 +248,20 @@ Widget _buildPlayerCircle(String playerName, Color color, bool isActivePlayer) {
                         ? Colors.green
                         : Colors.yellow,
                         //izbira barve glede na igralca
-                        currentPlayerIndex == players.indexOf(player)))
-                    .toList(),
+                        currentPlayerIndex == players.indexOf(player))).toList(),
               ),
             ),
             SizedBox(height: 20),
-            Text(
-              gameStarted ? 'Time left: $timerDuration' : 'Press HERE to begin',
-              //prikaz časa
+           
+              gameStarted ? Text('Time left: $timerDuration') : ElevatedButton(onPressed: startGameOnTap, child: Text('START GAME'),
+              //prikaz časa in gumba za začetek igre
             ),
             SizedBox(height: 20),
             Expanded(
-              child: Row(
+              child: Row
+              (
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: players
-                    .sublist(players.length ~/ 2)
-                    .map((player) => _buildPlayerCircle(
+                children: players.sublist(players.length ~/ 2).map((player) => _buildPlayerCircle(
                         player,
                         player == 'Player 1'
                         ? Colors.blue
@@ -205,8 +271,7 @@ Widget _buildPlayerCircle(String playerName, Color color, bool isActivePlayer) {
                         ? Colors.green
                         : Colors.yellow,
                         
-                        currentPlayerIndex == players.indexOf(player)))
-                    .toList(),
+                        currentPlayerIndex == players.indexOf(player))).toList(),
               ),
             ),
             
@@ -215,7 +280,7 @@ Widget _buildPlayerCircle(String playerName, Color color, bool isActivePlayer) {
             ],
           ),
         ),
-      )
-    );
+      );
+  
   }
 }
