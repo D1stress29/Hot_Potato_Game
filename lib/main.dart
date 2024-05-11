@@ -25,9 +25,12 @@ class GameScreen extends StatefulWidget {
 
 class _GameScreenState extends State<GameScreen> {
   late Timer timer;
-  int timerDuration = 10;
   bool gameStarted = false;
   int currentPlayerIndex = 0;
+  int minSeconds = 5;
+  int maxSeconds = 15;
+  final random = Random();
+  int timerDuration = 10;
   //spremenljivke za igro
   AudioCache audioCache = AudioCache();
   //inicializacija zvoka
@@ -78,7 +81,7 @@ showDialog(
                   Navigator.of(context).pop();
                   setState(() {
                     gameStarted = false;
-                    timerDuration = 10;
+                    timerDuration = minSeconds + random.nextInt(maxSeconds - minSeconds + 1);
                     currentPlayerIndex = 0;
                     players = ['Player 1', 'Player 2', 'Player 3', 'Player 4'];
                     //igralce, ki so izgubili doda nazaj v igro
@@ -97,7 +100,19 @@ showDialog(
 
 
   void endGame() {
+    currentPlayerIndex = 0;
     // koda za prekinitev igre
+    String deletedPlayer = players[currentPlayerIndex];
+    //ustvarimo novo spremenljivko, da lahko pozneje izpišemo ime igralca, ki je izgubil
+    players.removeAt(currentPlayerIndex);
+    //odstrani igralca, če je izgubil življenje
+    if (players.length == 1) 
+      {
+        gameWinner();
+        //če je igralec zadnji v igri, se uporabi gameWinner funkcija
+      }
+      else
+      {
     timer.cancel();
     showDialog(
       barrierDismissible: false,
@@ -106,7 +121,7 @@ showDialog(
       builder: (BuildContext context) {
         return AlertDialog(
           
-          content: Text('${players[currentPlayerIndex]} lost!'),
+          content: Text('${deletedPlayer} lost!'),
           //izpiše igralca, ki je izgubil življenje
           actions: [
             TextButton
@@ -117,33 +132,24 @@ showDialog(
                 Navigator.of(context).pop();
                 setState(() 
                 {
-                  players.removeAt(currentPlayerIndex);
-                  //odstrani igralca, če je izgubil življenje
-                  
                   gameStarted = false;
-                  timerDuration = 10;
-                  currentPlayerIndex = 0;
-                  //ponastavi igro
-                  if (players.length == 1) 
-                  {
-                    gameWinner();
-                    //če je igralec zadnji v igri, se uporabi gameWinner funkcija
-                  }
-                  
-                });
-              },
-            ),
-          ],
-        );
-      },
-    );  
+                  timerDuration = minSeconds + random.nextInt(maxSeconds - minSeconds + 1);
+                  //ponastavi igro 
+                  });
+                },
+              ),
+            ],
+          );
+        },
+      ); 
+    } 
   }
 
   @override
 void initState() {
   super.initState();
   // Metoda, ki se kliče po ustvarjanju State
-  startGameOnTap();
+
 }
 
 void startGameOnTap() {
@@ -207,14 +213,24 @@ Widget _buildPlayerCircle(String playerName, Color color, bool isActivePlayer) {
       ),
     ),
     if (isActivePlayer)
-      Positioned (
-        right: -50,
+          AnimatedPositioned(
+            duration: Duration(milliseconds: 500), // Adjust the duration as needed
+            curve: Curves.easeInOut, // Adjust the curve as needed
+            top:  -15,
+            right:  -15,
+            child: GestureDetector(
+              onTap: () {
+                if (gameStarted && isActivePlayer) {
+                  passPotato();
+                }
+              },
               child: Image.asset(
                 'assets/paket.png',
-                width: 50,
-                height: 50,
+                width: 75,
+                height: 75,
               ),
             ),
+          ),
         ],
       ),
     );
@@ -253,7 +269,11 @@ Widget _buildPlayerCircle(String playerName, Color color, bool isActivePlayer) {
             ),
             SizedBox(height: 20),
            
-              gameStarted ? Text('Time left: $timerDuration') : ElevatedButton(onPressed: startGameOnTap, child: Text('START GAME'),
+              gameStarted ? Text('Time left: $timerDuration',
+              style: TextStyle(fontFamily: 'Orbitron', fontSize: 24
+              
+                ),
+              ) : ElevatedButton(onPressed: startGameOnTap, child: Text('START GAME'),
               //prikaz časa in gumba za začetek igre
             ),
             SizedBox(height: 20),
