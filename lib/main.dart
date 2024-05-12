@@ -11,7 +11,7 @@ class HotPotatoGame extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Hot Potato Game',
+      title: 'Pošlji paket',
       
       home: GameScreen(),
     );
@@ -32,8 +32,16 @@ class _GameScreenState extends State<GameScreen> {
   final random = Random();
   int timerDuration = 10;
   //spremenljivke za igro
-  AudioCache audioCache = AudioCache();
+  final clockPlayer = AudioPlayer();
+  final explosionPlayer = AudioPlayer();
+  final victoryPlayer = AudioPlayer();
   //inicializacija zvoka
+  String clockSoundPath = "clock_sound.mp3";
+  String explosionSoundPath = "explosion.mp3";
+  String victorySoundPath = "victory.mp3";
+  //deklaracija poti za zvok ure
+  
+  
 
   List<String> players = [
     'Player 1',
@@ -44,26 +52,31 @@ class _GameScreenState extends State<GameScreen> {
   ];
 
   void startGame() {
-    setState(() {
+      clockPlayer.setVolume(1);
+    clockPlayer.play(AssetSource(clockSoundPath));
       //začetek igre (uporabljeno v gumbu start)
       gameStarted = true;
+      
+      
       timer = Timer.periodic(Duration(seconds: 1), (timer) {
         setState(() {
-          if (timerDuration >  0) {
+          if (timerDuration >  1) {
             timerDuration--;
             //nastavljeno odštevanje števca
           } 
           else 
           {
             endGame();
+            clockPlayer.stop();
           }
         });
       });
-    });
+    
   }
 
 void gameWinner() {
  //funkcija za izpis zmagovalca
+ victoryPlayer.play(AssetSource(victorySoundPath));
 timer.cancel();
 showDialog(
       barrierDismissible: false,
@@ -114,6 +127,7 @@ showDialog(
       else
       {
     timer.cancel();
+     explosionPlayer.play(AssetSource(explosionSoundPath));
     showDialog(
       barrierDismissible: false,
       //obvezen klik na OK gumb
@@ -129,6 +143,8 @@ showDialog(
               child: Text('OK'),
               onPressed: () 
               {
+                explosionPlayer.stop();
+                //prekinitev zvoka eksplozije
                 Navigator.of(context).pop();
                 setState(() 
                 {
@@ -163,7 +179,7 @@ void startGameOnTap() {
 }
 
 
-  void passPotato() {
+  void passPackage() {
   setState(() {
     int newIndex;
     
@@ -191,7 +207,7 @@ Widget _buildPlayerCircle(String playerName, Color color, bool isActivePlayer) {
       //metoda za prepoznavanje dotika
       onTap: () {
         if (gameStarted && isActivePlayer) {
-          passPotato();
+          passPackage();
           //ob zaznanem dotiku kroga igralca se pošlje paket
         }
       },
@@ -221,7 +237,7 @@ Widget _buildPlayerCircle(String playerName, Color color, bool isActivePlayer) {
             child: GestureDetector(
               onTap: () {
                 if (gameStarted && isActivePlayer) {
-                  passPotato();
+                  passPackage();
                 }
               },
               child: Image.asset(
