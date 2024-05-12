@@ -135,7 +135,8 @@ showDialog(
       builder: (BuildContext context) {
         return AlertDialog(
           
-          content: Text('${deletedPlayer} lost!'),
+          content: Text('$deletedPlayer lost!',
+          style: TextStyle(fontSize: 15)),
           //izpiše igralca, ki je izgubil življenje
           actions: [
             TextButton
