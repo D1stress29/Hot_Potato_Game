@@ -51,6 +51,14 @@ class _GameScreenState extends State<GameScreen> {
     //seznam igralcev
   ];
 
+Map<String, int> playerLives = {
+'Player 1': 3,
+'Player 2': 3,
+'Player 3': 3,
+'Player 4': 3,
+};
+
+
   void startGame() {
       clockPlayer.setVolume(1);
     clockPlayer.play(AssetSource(clockSoundPath));
@@ -97,8 +105,8 @@ showDialog(
                     timerDuration = minSeconds + random.nextInt(maxSeconds - minSeconds + 1);
                     currentPlayerIndex = 0;
                     players = ['Player 1', 'Player 2', 'Player 3', 'Player 4'];
+                    playerLives = {'Player 1': 3, 'Player 2': 3, 'Player 3': 3, 'Player 4': 3,};
                     //igralce, ki so izgubili doda nazaj v igro
-                  
                   });
                 },
                 child: Text('Play Again'),
@@ -113,12 +121,22 @@ showDialog(
 
 
   void endGame() {
-    currentPlayerIndex = 0;
     // koda za prekinitev igre
     String deletedPlayer = players[currentPlayerIndex];
     //ustvarimo novo spremenljivko, da lahko pozneje izpišemo ime igralca, ki je izgubil
-    players.removeAt(currentPlayerIndex);
+    playerLives[players[currentPlayerIndex]] = playerLives[players[currentPlayerIndex]] !- 1;
+    //odstrani življenje igralcu
+
+    print('${players[currentPlayerIndex]} lost a life. Lives left: ${playerLives[players[currentPlayerIndex]]}');
+  
+    if (playerLives[players[currentPlayerIndex]] == 0) {
+      //če igralec izgubi vsa življenja, ga izbriše
+        players.removeAt(currentPlayerIndex);
+        
+    }
     //odstrani igralca, če je izgubil življenje
+    currentPlayerIndex = 0;
+
     if (players.length == 1) 
       {
         gameWinner();
@@ -135,13 +153,13 @@ showDialog(
       builder: (BuildContext context) {
         return AlertDialog(
           
-          content: Text('$deletedPlayer lost!',
+          content: Text('$deletedPlayer lost a life!',
           style: TextStyle(fontSize: 15)),
           //izpiše igralca, ki je izgubil življenje
           actions: [
             TextButton
             (
-              child: Text('OK'),
+              child: Text('Continue'),
               onPressed: () 
               {
                 explosionPlayer.stop();
@@ -180,6 +198,7 @@ void startGameOnTap() {
 }
 
 
+
   void passPackage() {
   setState(() {
     int newIndex;
@@ -193,65 +212,88 @@ void startGameOnTap() {
     //while pogoj se izpolnjuje ko je generiran index enak indexu trenutnega igralca
     currentPlayerIndex = newIndex;
     //nastavimo igralcu nov index, ki je drugačen od trenutnega
+    
   });
 }
 
-Widget _buildPlayerCircle(String playerName, Color color, bool isActivePlayer) {
-  return Container(
-    width: 100,
-    height: 100,
-    margin: EdgeInsets.all(50),
-    child: Stack(
-    alignment: Alignment.center,
-    children: [ 
-      GestureDetector(
-      //metoda za prepoznavanje dotika
+Widget _buildPlayerCircle(String playerName, Color color, bool isActivePlayer, int lives) {
+  List<Widget> children = [
+    GestureDetector(
       onTap: () {
         if (gameStarted && isActivePlayer) {
           passPackage();
-          //ob zaznanem dotiku kroga igralca se pošlje paket
+          color = color.withOpacity(0.1);
+          
+          //podajanje paketa
         }
       },
       child: Container(
-        width: 100, 
-        height: 100, 
+        width: 100,
+        height: 100,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: isActivePlayer ? color : Colors.grey,
-          border: Border.all(color: Colors.black, width: 1),
+          color: color,
+          border: Border.all(color: Colors.black, width: 2),
         ),
         child: Center(
           child: Text(
             playerName,
             textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.white),
+            style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
           ),
         ),
       ),
     ),
-    if (isActivePlayer)
-          AnimatedPositioned(
-            duration: Duration(milliseconds: 500), // Adjust the duration as needed
-            curve: Curves.easeInOut, // Adjust the curve as needed
-            top:  -15,
-            right:  -15,
-            child: GestureDetector(
-              onTap: () {
-                if (gameStarted && isActivePlayer) {
-                  passPackage();
-                }
-              },
-              child: Image.asset(
-                'assets/paket.png',
-                width: 75,
-                height: 75,
-              ),
-            ),
-          ),
-        ],
+  ];
+
+  for (int i = 0; i < lives; i++) {
+    children.add(
+      Positioned(
+        top: 70,
+        right: 20 + i*20 ,
+        child: Image.asset(
+          'assets/heart.png',
+          width: 20,
+          height: 20,
+        ),
       ),
     );
   }
+
+  if (isActivePlayer) {
+    children.add(
+      AnimatedPositioned(
+        duration: Duration(milliseconds: 500),
+        curve: Curves.easeInOut,
+        top: -15,
+        right: -15,
+        child: GestureDetector(
+          onTap: () {
+            if (gameStarted && isActivePlayer) {
+              passPackage();
+            
+            }
+          },
+          child: Image.asset(
+            'assets/paket.png',
+            width: 75,
+            height: 75,
+          ),
+        ),
+      ),
+    );
+  }
+
+  return Container(
+    width: 100,
+    height: 100,
+    margin: EdgeInsets.all(50),
+    child: Stack(
+      alignment: Alignment.center,
+      children: children,
+    ),
+  );
+}
 
   
 
@@ -262,8 +304,6 @@ Widget _buildPlayerCircle(String playerName, Color color, bool isActivePlayer) {
     return Scaffold(
       
       body: Center(
-        
-          //zažene funkcijo startGameOnTap ob kliku ekrana
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
@@ -272,6 +312,7 @@ Widget _buildPlayerCircle(String playerName, Color color, bool isActivePlayer) {
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: players.sublist(0, players.length ~/ 2).map((player) => _buildPlayerCircle
                 (
+                  
                         player,
                         player == 'Player 1'
                         ? Colors.blue
@@ -281,7 +322,8 @@ Widget _buildPlayerCircle(String playerName, Color color, bool isActivePlayer) {
                         ? Colors.green
                         : Colors.yellow,
                         //izbira barve glede na igralca
-                        currentPlayerIndex == players.indexOf(player))).toList(),
+                        currentPlayerIndex == players.indexOf(player),
+                        playerLives[player] ?? 0)).toList(),
               ),
             ),
             SizedBox(height: 20),
@@ -301,14 +343,15 @@ Widget _buildPlayerCircle(String playerName, Color color, bool isActivePlayer) {
                 children: players.sublist(players.length ~/ 2).map((player) => _buildPlayerCircle(
                         player,
                         player == 'Player 1'
-                        ? Colors.blue
+                        ? Colors.blue.withOpacity(0.9)
                         : player == 'Player 2'
-                        ? Colors.red
+                        ? Colors.red.withOpacity(0.9)
                         : player == 'Player 3'
-                        ? Colors.green
-                        : Colors.yellow,
+                        ? Colors.green.withOpacity(0.9)
+                        : Colors.yellow.withOpacity(0.9),
                         
-                        currentPlayerIndex == players.indexOf(player))).toList(),
+                        currentPlayerIndex == players.indexOf(player),
+                        playerLives[player] ?? 0)).toList(),
               ),
             ),
             
