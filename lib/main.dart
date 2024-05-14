@@ -12,6 +12,7 @@ class HotPotatoGame extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Pošlji paket',
+    
       
       home: GameScreen(),
     );
@@ -24,8 +25,10 @@ class GameScreen extends StatefulWidget {
 }
 
 class _GameScreenState extends State<GameScreen> {
+  
   late Timer timer;
   bool gameStarted = false;
+  bool positivePackage = false;
   int currentPlayerIndex = 0;
   int minSeconds = 5;
   int maxSeconds = 15;
@@ -35,10 +38,12 @@ class _GameScreenState extends State<GameScreen> {
   final clockPlayer = AudioPlayer();
   final explosionPlayer = AudioPlayer();
   final victoryPlayer = AudioPlayer();
+  final gainedLifePlayer = AudioPlayer();
   //inicializacija zvoka
   String clockSoundPath = "clock_sound.mp3";
   String explosionSoundPath = "explosion.mp3";
   String victorySoundPath = "victory.mp3";
+  String gainedLifeSoundPath = "Gained life.mp3";
   //deklaracija poti za zvok ure
   
   
@@ -74,7 +79,16 @@ Map<String, int> playerLives = {
           } 
           else 
           {
-            endGame();
+            if (playerLives[players[currentPlayerIndex]] == 3) 
+            {
+              endGame();
+              //če ima igralec samo eno življenje, se uporabi endGame funkcija
+            } 
+            else 
+            {
+              gainedLife();
+            }
+            
             clockPlayer.stop();
           }
         });
@@ -94,7 +108,7 @@ showDialog(
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('${players[0]} is the winner!'),
+              Text('${players[0]} is the winner!', style: TextStyle(fontFamily: 'PressStart2P')),
               //izpiše ime zmagovalca
               SizedBox(height: 20),
               ElevatedButton(
@@ -109,7 +123,7 @@ showDialog(
                     //igralce, ki so izgubili doda nazaj v igro
                   });
                 },
-                child: Text('Play Again'),
+                child: Text('Play Again', style: TextStyle(fontFamily: 'PressStart2P')),
               ),
             ],
           ),
@@ -119,15 +133,65 @@ showDialog(
 }
 
 
+void gainedLife() {
+  
+  String deletedPlayer = players[currentPlayerIndex];
+
+
+  int randomNumber = Random().nextInt(10) + 1;
+
+  if (randomNumber == 4)
+  {
+    // naključna možnost (10%) za pridobitev življenja
+  playerLives[players[currentPlayerIndex]] = playerLives[players[currentPlayerIndex]]! + 1;
+
+  gainedLifePlayer.play(AssetSource(gainedLifeSoundPath));
+  showDialog(
+      barrierDismissible: false,
+      //obvezen klik na OK gumb
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          
+          content: Text(' $deletedPlayer gained a life!',
+          style: TextStyle(fontSize: 15, fontFamily: 'PressStart2P', color: Colors.green)),
+          //izpiše igralca, ki je izgubil življenje
+          actions: [
+            TextButton
+            (
+              child: Text('Continue', style: TextStyle(fontFamily: 'PressStart2P')),
+              onPressed: () 
+              {
+                
+                //prekinitev zvoka eksplozije
+                Navigator.of(context).pop();
+                setState(() 
+                {
+                  gameStarted = false;
+                  timerDuration = minSeconds + random.nextInt(maxSeconds - minSeconds + 1);
+                  //ponastavi igro 
+                  });
+                },
+              ),
+            ],
+          );
+        },
+      );
+    }
+    else
+    {
+      endGame();
+    }
+}
 
   void endGame() {
     // koda za prekinitev igre
     String deletedPlayer = players[currentPlayerIndex];
     //ustvarimo novo spremenljivko, da lahko pozneje izpišemo ime igralca, ki je izgubil
+  
     playerLives[players[currentPlayerIndex]] = playerLives[players[currentPlayerIndex]] !- 1;
     //odstrani življenje igralcu
-
-    print('${players[currentPlayerIndex]} lost a life. Lives left: ${playerLives[players[currentPlayerIndex]]}');
+    
   
     if (playerLives[players[currentPlayerIndex]] == 0) {
       //če igralec izgubi vsa življenja, ga izbriše
@@ -154,12 +218,12 @@ showDialog(
         return AlertDialog(
           
           content: Text('$deletedPlayer lost a life!',
-          style: TextStyle(fontSize: 15)),
+          style: TextStyle(fontSize: 15, fontFamily: 'PressStart2P', color: Colors.red)),
           //izpiše igralca, ki je izgubil življenje
           actions: [
             TextButton
             (
-              child: Text('Continue'),
+              child: Text('Continue', style: TextStyle(fontFamily: 'PressStart2P')),
               onPressed: () 
               {
                 explosionPlayer.stop();
@@ -176,7 +240,8 @@ showDialog(
             ],
           );
         },
-      ); 
+      );
+     
     } 
   }
 
@@ -219,14 +284,16 @@ void startGameOnTap() {
 Widget _buildPlayerCircle(String playerName, Color color, bool isActivePlayer, int lives) {
   List<Widget> children = [
     GestureDetector(
-      onTap: () {
-        if (gameStarted && isActivePlayer) {
-          passPackage();
-          color = color.withOpacity(0.1);
-          
-          //podajanje paketa
-        }
-      },
+  onTap: () {
+    if (gameStarted && isActivePlayer) {
+      setState(() {
+        passPackage();
+        color = color.withOpacity(0.1);
+        // podajanje paketa
+      });
+    }
+  },
+
       child: Container(
         width: 100,
         height: 100,
@@ -239,7 +306,7 @@ Widget _buildPlayerCircle(String playerName, Color color, bool isActivePlayer, i
           child: Text(
             playerName,
             textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+            style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontFamily: 'PressStart2P', fontSize: 9),
           ),
         ),
       ),
@@ -265,8 +332,8 @@ Widget _buildPlayerCircle(String playerName, Color color, bool isActivePlayer, i
       AnimatedPositioned(
         duration: Duration(milliseconds: 500),
         curve: Curves.easeInOut,
-        top: -15,
-        right: -15,
+        top: -42,
+        right: -38,
         child: GestureDetector(
           onTap: () {
             if (gameStarted && isActivePlayer) {
@@ -275,9 +342,9 @@ Widget _buildPlayerCircle(String playerName, Color color, bool isActivePlayer, i
             }
           },
           child: Image.asset(
-            'assets/paket.png',
-            width: 75,
-            height: 75,
+            'assets/8bit package.png',
+            width: 120,
+            height: 120,
           ),
         ),
       ),
@@ -301,9 +368,10 @@ Widget _buildPlayerCircle(String playerName, Color color, bool isActivePlayer, i
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      
+    
+    return Scaffold( 
       body: Center(
+        
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
@@ -326,15 +394,36 @@ Widget _buildPlayerCircle(String playerName, Color color, bool isActivePlayer, i
                         playerLives[player] ?? 0)).toList(),
               ),
             ),
-            SizedBox(height: 20),
-           
-              gameStarted ? Text('Time left: $timerDuration',
-              style: TextStyle(fontFamily: 'Orbitron', fontSize: 24
-              
-                ),
-              ) : ElevatedButton(onPressed: startGameOnTap, child: Text('START GAME'),
-              //prikaz časa in gumba za začetek igre
+            SizedBox(height: 20),  
+              gameStarted ? Text('$timerDuration',
+              style: TextStyle(fontFamily: 'PressStart2P', fontSize: 30, color: timerDuration < 5 ? Colors.red : Colors.black),
+              ) : ElevatedButton(onPressed: startGameOnTap, child: Text('START GAME',
+              style: TextStyle(fontFamily: 'PressStart2P', fontSize: 20, color: Colors.black)
+               
+              ),
+                //prikaz časa in gumba za začetek igre
             ),
+
+Visibility(
+  visible: gameStarted && timerDuration >= 4 && timerDuration <= 7 && Random().nextInt(10) == 0,
+  child: ElevatedButton(
+    onPressed: () {
+      setState(() {
+        timerDuration += 5;
+      });
+    },
+    child: Text(
+      '+5',
+      style: TextStyle(
+        fontFamily: 'PressStart2P',
+        fontSize: 20,
+        color: Colors.black,
+      ),
+    ),
+  ),
+),
+             
+              
             SizedBox(height: 20),
             Expanded(
               child: Row
@@ -354,9 +443,6 @@ Widget _buildPlayerCircle(String playerName, Color color, bool isActivePlayer, i
                         playerLives[player] ?? 0)).toList(),
               ),
             ),
-            
-                
-              
             ],
           ),
         ),
